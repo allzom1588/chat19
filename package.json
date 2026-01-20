@@ -1,0 +1,22 @@
+{
+  "name": "volatile-chat-mvp",
+  "version": "1.0.0",
+  "description": "Anonymous 1:1 Volatile Chat Service MVP",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "keywords": [
+    "chat",
+    "socket.io",
+    "volatile",
+    "mvp"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.18.2",
+    "socket.io": "^4.7.2",
+    "uuid": "^9.0.1"
+  }
+}

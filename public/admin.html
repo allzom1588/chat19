@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>관리자 대시보드</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #e0e0e0;
+            height: 100vh;
+            display: flex;
+            overflow: hidden;
+        }
+
+        /* Sidebar */
+        #sidebar {
+            width: 260px;
+            background: white;
+            border-right: 1px solid #ccc;
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+            z-index: 10;
+            shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            background: #673ab7;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .sidebar-header h2 {
+            font-size: 1.1rem;
+        }
+
+        #user-list {
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .user-item {
+            padding: 12px 15px;
+            border-bottom: 1px solid #f0f0f0;
+            cursor: pointer;
+            transition: background 0.2s;
+            position: relative;
+        }
+
+        .user-item:hover {
+            background: #f5f5f5;
+        }
+
+        .user-item.active {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+        }
+
+        .user-name {
+            font-weight: bold;
+            font-size: 0.85rem;
+            color: #333;
+            display: block;
+            margin-bottom: 3px;
+        }
+
+        .last-msg {
+            font-size: 0.75rem;
+            color: #666;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .status-dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #ccc;
+            margin-right: 5px;
+        }
+
+        .status-dot.online {
+            background: #4caf50;
+        }
+
+        .badge {
+            position: absolute;
+            right: 10px;
+            top: 12px;
+            background: #ff4081;
+            color: white;
+            font-size: 0.7rem;
+            padding: 2px 6px;
+            border-radius: 10px;
+            display: none;
+        }
+
+        /* Main Workspace */
+        #workspace {
+            flex: 1;
+            padding: 20px;
+            overflow-x: auto;
+            overflow-y: auto;
+            display: flex;
+            flex-wrap: wrap;
+            align-content: flex-start;
+            gap: 15px;
+            background: #eceff1;
+        }
+
+        /* Chat Card */
+        .chat-card {
+            width: 320px;
+            height: 450px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .card-header {
+            padding: 10px 15px;
+            background: #673ab7;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: move;
+            /* Potential drag handle? */
+        }
+
+        .card-title {
+            font-size: 0.9rem;
+            font-weight: bold;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
+            font-size: 1.2rem;
+            line-height: 1;
+            opacity: 0.8;
+        }
+
+        .close-btn:hover {
+            opacity: 1;
+        }
+
+        .card-messages {
+            flex: 1;
+            padding: 10px;
+            overflow-y: auto;
+            background: #f9f9f9;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .card-input-area {
+            padding: 10px;
+            background: white;
+            display: flex;
+            gap: 5px;
+        }
+
+        .card-input-area input {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            outline: none;
+            font-size: 0.9rem;
+        }
+
+        .card-input-area button {
+            padding: 0 12px;
+            background: #673ab7;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+
+        .card-input-area button:hover {
+            background: #5e35b1;
+        }
+
+        /* Bubbles */
+        .msg {
+            max-width: 80%;
+            padding: 8px 12px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            line-height: 1.3;
+            word-wrap: break-word;
+        }
+
+        .msg-user {
+            align-self: flex-start;
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-bottom-left-radius: 2px;
+        }
+
+        .msg-admin {
+            align-self: flex-end;
+            background: #ede7f6;
+            color: #4527a0;
+            border-bottom-right-radius: 2px;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #ccc;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="sidebar">
+        <div class="sidebar-header">
+            <h2>대기열 / 목록</h2>
+            <span id="total-count">0</span>
+        </div>
+        <div id="user-list">
+            <!-- User Items -->
+        </div>
+    </div>
+
+    <div id="workspace">
+        <!-- Chat Cards will be appended here -->
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+
+        // Data Models
+        let users = {}; // { [socketId]: { uuid, messages: [], unread: 0 } }
+        let openChats = new Set(); // Set of socketIds currently displayed as cards
+
+        const sidebarList = document.getElementById('user-list');
+        const workspace = document.getElementById('workspace');
+        const totalCountSpan = document.getElementById('total-count');
+
+        socket.on('connect', () => {
+            socket.emit('join_admin');
+        });
+
+        socket.on('admin_init', (serverChats) => {
+            users = {};
+            for (let id in serverChats) {
+                users[id] = { ...serverChats[id], unread: 0 };
+            }
+            renderSidebar();
+        });
+
+        socket.on('user_connected', (userData) => {
+            if (!users[userData.socketId]) {
+                users[userData.socketId] = { ...userData, unread: 0 };
+                renderSidebar();
+            }
+        });
+
+        socket.on('user_disconnected', (socketId) => {
+            if (users[socketId]) {
+                delete users[socketId];
+                // Remove card if open
+                if (openChats.has(socketId)) {
+                    removeChatCard(socketId);
+                }
+                renderSidebar();
+            }
+        });
+
+        socket.on('new_message', ({ userId, message }) => {
+            if (users[userId]) {
+                users[userId].messages.push(message);
+
+                // If card is open, append message
+                if (openChats.has(userId)) {
+                    appendMessageToCard(userId, message);
+                } else {
+                    // Update unread count if card not open
+                    users[userId].unread = (users[userId].unread || 0) + 1;
+                }
+                renderSidebar(); // Update preview & badge
+            }
+        });
+
+        socket.on('admin_sent_message', ({ userId, message }) => {
+            // Check if we need to display this (e.g. sent by another admin tab)
+            // If we sent it from THIS tab, we probably already appended it optimistically.
+            // But we can check timestamp or similar to dedup, or just rely on server.
+            // For MVP simplicity: We will NOT optimistically append in the submit handler anymore,
+            // we will rely on this event to display own messages too? 
+            // Better/Smoother: Optimistically append, and ignore this if it matches last message.
+            // Actually, let's keep it simple: Optimistic append in submit(). 
+            // If we receive echo, check if last message is identical, if so ignore.
+
+            if (users[userId]) {
+                const lastMsg = users[userId].messages[users[userId].messages.length - 1];
+                // If the message is not already in our memory (meaning another admin sent it), add it
+                // Note: 'new_message' event pushes to user.messages, but 'admin_sent_message' logic I wrote in server sends to everyone.
+                // Wait, server logic:
+                // userChat.messages.push(data); -> server memory updated
+                // io.to(ADMIN).emit(..., data);
+
+                // So we need to sync our local 'users' model too.
+                // Ideally we check if we already have it.
+                // Let's just always render from this event if it's not the one we just typed.
+                // BUT, distinguishing 'my tab' vs 'other admin tab' needs a client ID.
+                // I'll stick to: Render if card is open.
+
+                if (openChats.has(userId)) {
+                    // Quick check to avoid duplicate display if we did optimistic
+                    // We can just query the DOM
+                    const card = document.getElementById(`card-${userId}`);
+                    if (card) {
+                        const msgsDiv = card.querySelector('.card-messages');
+                        const lastDomMsg = msgsDiv.lastElementChild;
+                        if (!lastDomMsg || lastDomMsg.textContent !== message.text || lastDomMsg.className.includes('msg-user')) {
+                            // It's a new message (or from other admin)
+                            appendMessageToCard(userId, message);
+                        }
+                    }
+                }
+                // Also update memory if not present (simple check)
+                // In a real app we'd use unique msg IDs.
+            }
+        });
+
+        // --- Sidebar Logic ---
+        function renderSidebar() {
+            sidebarList.innerHTML = '';
+            const ids = Object.keys(users);
+            totalCountSpan.textContent = ids.length;
+
+            ids.forEach(id => {
+                const user = users[id];
+                const item = document.createElement('div');
+                item.className = `user-item ${openChats.has(id) ? 'active' : ''}`;
+                item.onclick = () => openChatCard(id);
+
+                // Content
+                const lastMsg = user.messages.length > 0 ? user.messages[user.messages.length - 1].text : '대화 없음';
+
+                item.innerHTML = `
+                    <span class="user-name">
+                        <span class="status-dot online"></span> User ${user.uuid.substring(0, 6)}
+                    </span>
+                    <div class="last-msg">${lastMsg}</div>
+                    <span class="badge" style="display: ${user.unread > 0 ? 'inline-block' : 'none'}">${user.unread}</span>
+                `;
+                sidebarList.appendChild(item);
+            });
+        }
+
+        // --- Workspace/Card Logic ---
+        function openChatCard(socketId) {
+            if (openChats.has(socketId)) {
+                // Already open, highlight or scroll to it?
+                const card = document.getElementById(`card-${socketId}`);
+                card.scrollIntoView({ behavior: 'smooth' });
+                // Flash effect?
+                card.style.border = '2px solid #673ab7';
+                setTimeout(() => card.style.border = 'none', 500);
+                return;
+            }
+
+            openChats.add(socketId);
+            users[socketId].unread = 0; // Clear unread
+            renderSidebar(); // Update sidebar state
+
+            // Create Card
+            const user = users[socketId];
+            const card = document.createElement('div');
+            card.className = 'chat-card';
+            card.id = `card-${socketId}`;
+
+            card.innerHTML = `
+                <div class="card-header">
+                    <span class="card-title">User ${user.uuid.substring(0, 6)}</span>
+                    <button class="close-btn" onclick="removeChatCard('${socketId}')">×</button>
+                </div>
+                <div class="card-messages"></div>
+                <form class="card-input-area" onsubmit="handleSend(event, '${socketId}')">
+                    <input type="text" placeholder="입력..." autocomplete="off">
+                    <button type="submit">전송</button>
+                </form>
+            `;
+
+            workspace.appendChild(card);
+
+            // Render existing messages
+            const msgsDiv = card.querySelector('.card-messages');
+            user.messages.forEach(msg => {
+                const div = document.createElement('div');
+                div.className = `msg ${msg.sender === 'admin' ? 'msg-admin' : 'msg-user'}`;
+                div.textContent = msg.text;
+                msgsDiv.appendChild(div);
+            });
+            msgsDiv.scrollTop = msgsDiv.scrollHeight;
+        }
+
+        function removeChatCard(socketId) {
+            const card = document.getElementById(`card-${socketId}`);
+            if (card) {
+                card.remove();
+            }
+            openChats.delete(socketId);
+            renderSidebar();
+        }
+
+        function appendMessageToCard(socketId, message) {
+            const card = document.getElementById(`card-${socketId}`);
+            if (!card) return;
+
+            const msgsDiv = card.querySelector('.card-messages');
+            const div = document.createElement('div');
+            div.className = `msg ${message.sender === 'admin' ? 'msg-admin' : 'msg-user'}`;
+            div.textContent = message.text;
+            msgsDiv.appendChild(div);
+            msgsDiv.scrollTop = msgsDiv.scrollHeight;
+        }
+
+        // Exposed to global scope for HTML inline event
+        window.removeChatCard = removeChatCard;
+        window.handleSend = function (e, socketId) {
+            e.preventDefault();
+            const input = e.target.querySelector('input');
+            const text = input.value.trim();
+            if (text) {
+                // Emit
+                socket.emit('msg_admin_to_user', { targetSocketId: socketId, text });
+
+                // Optimistic UI
+                // We manually append here because we want instant feedback
+                const msgObj = { sender: 'admin', text: text, time: Date.now() };
+                appendMessageToCard(socketId, msgObj);
+
+                // Keep memory updated roughly (actual sync happens via server 'admin_sent_message' but we might dedup there)
+                // users[socketId].messages.push(msgObj); // Let's wait for server echo or just push it here?
+                // If we push here and server echo comes back, we likely dup.
+                // The 'admin_sent_message' listener logic tries to avoid dup.
+
+                input.value = '';
+                input.focus();
+            }
+        };
+
+    </script>
+</body>
+
+</html>
