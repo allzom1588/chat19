@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>1:1 익명채팅</title>
+    <title>AI 야한채팅</title>
     <style>
         * {
             box-sizing: border-box;
@@ -142,7 +142,7 @@
 <body>
     <div class="chat-container">
         <header>
-            <h1>익명채팅19</h1>
+            <h1>AI야한채팅</h1>
             <button id="exit-btn">종료</button>
         </header>
         <div id="messages">
@@ -171,7 +171,7 @@
 
         socket.on('user_init', (data) => {
             myUUID = data.uuid;
-            addSystemMessage('익명의상대와 연결되었습니다. 대화를 시작해보세요.');
+            addSystemMessage('야한채팅에 오신걸 환영합니다. 대화를 시작해보세요');
         });
 
         socket.on('new_message', (msgData) => {
